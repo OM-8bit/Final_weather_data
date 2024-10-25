@@ -1,13 +1,28 @@
 import streamlit as st
 from Data.data_of_weather import fetch_weather_data  # Import your function to fetch weather data
 
-# Title of the app
+# Set up your Streamlit app
+st.set_page_config(page_title="Weather Data Visualization", layout="wide")
+
+# Title and description
 st.title("Weather Data Visualization")
+st.markdown("Enter a city name to get the current weather details!")
 
-# User input for city name
-city = st.text_input("Enter the city name:", "Delhi")
+# Input from the user
+city_name = st.text_input("Enter city name", "")
 
-# Fetch and display weather data
-if city:
-    weather_data = fetch_weather_data(city)
-    st.write(weather_data)  # Display the fetched weather data
+# Fetch weather data and display it
+if city_name:
+    weather_data = fetch_weather_data(city_name)
+
+    # Check if the data was fetched successfully or if there was an error
+    if "error" not in weather_data:
+        # Display weather details
+        st.subheader(f"Weather in {city_name}")
+        st.write(f"Temperature: {weather_data['main']['temp']}°C")
+        st.write(f"Weather: {weather_data['weather'][0]['description'].title()}")
+        st.write(f"Humidity: {weather_data['main']['humidity']}%")
+        st.write(f"Wind Speed: {weather_data['wind']['speed']} m/s")
+    else:
+        # Display error message if city is not found or there's an error
+        st.error(weather_data["error"])
