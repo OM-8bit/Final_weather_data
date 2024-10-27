@@ -13,17 +13,22 @@ def fetch_weather_data(city):
     # Print the raw response for debugging
     print(data)
 
-    if response.status_code == 200:
-        # Access the current temperature from the API data
-        base_temp = data['current']['temp_c']
-
-        # Generate a mock hourly temperature trend for visualization
+    if response.status_code == 200 and 'error' not in data:
+        # Generate mock hourly temperature and humidity trends
         hourly_trend = []
+        hourly_humidity_trend = []
+        base_temp = data['current']['temp_c']
+        base_humidity = data['current']['humidity']
+        
         for hour in range(24):  # 24 hours for the current day
             temp_variation = random.uniform(-2, 2)  # Simulate small temperature changes
+            humidity_variation = random.uniform(-5, 5)  # Simulate small humidity changes
+            
             hourly_trend.append(base_temp + temp_variation)
+            hourly_humidity_trend.append(max(0, min(100, base_humidity + humidity_variation)))  # Keep within 0-100%
         
-        data['hourly_trend'] = hourly_trend  # Add to main data object for easy access
+        data['hourly_trend'] = hourly_trend  # Add temperature trend
+        data['hourly_humidity_trend'] = hourly_humidity_trend  # Add humidity trend
         return data  # Return the weather data if the request was successful
     else:
         return {"error": data.get("error", {}).get("message", "An error occurred")}

@@ -33,20 +33,30 @@ if city_name:
         
         # Temperature Trend Plot with Enhanced Styling
         st.subheader("Temperature Trend for Today")
-        plt.style.use("ggplot")  # Using an available style as an alternative to seaborn-darkgrid
+        plt.style.use("ggplot")  # Updated style
         fig, ax = plt.subplots(figsize=(10, 4))
         
-        # Plot hourly temperature trend with enhanced visuals
+        # Plot hourly temperature trend
         ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
         ax.set_ylabel("Temperature (°C)")
         ax.set_title("Simulated Hourly Temperature Trend", fontsize=14)
-        
-        # Customize the grid and labels
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
         
-        # Optional: Add custom HTML and CSS for minor styling adjustments
+        # Humidity Trend Plot
+        st.subheader("Humidity Trend for Today")
+        fig, ax = plt.subplots(figsize=(10, 4))
+        
+        # Plot hourly humidity trend
+        ax.plot(weather_data['hourly_humidity_trend'], marker='o', color='green', linestyle='-', linewidth=2, markersize=5)
+        ax.set_xlabel("Hour")
+        ax.set_ylabel("Humidity (%)")
+        ax.set_title("Simulated Hourly Humidity Trend", fontsize=14)
+        ax.grid(color='gray', linestyle='--', linewidth=0.5)
+        st.pyplot(fig)
+
+        # Optional: Minor styling adjustments for visual consistency
         st.markdown(
             """
             <style>
