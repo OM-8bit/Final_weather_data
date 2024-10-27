@@ -4,8 +4,12 @@ import streamlit as st
 from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
 
-# Set up Streamlit app with a theme and wide layout
-st.set_page_config(page_title="Weather Data Visualization", layout="wide")
+# Set up Streamlit app with a theme and wide layout and add animated favicon
+st.set_page_config(
+    page_title="Weather Data Visualization",
+    layout="wide",
+    page_icon="Assets\cloudy.png"  # Add the path to your animated icon
+)
 
 # Title with Emoji
 st.title("🌤️ Weather Data Visualization")
