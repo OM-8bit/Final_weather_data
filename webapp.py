@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 st.set_page_config(
     page_title="Weather Data Visualization",
     layout="wide",
-    page_icon="Assets\cloudy.png"  # Add the path to your animated icon
+    page_icon="Assets/cloudy.png"
 )
 
 # Title with Emoji
@@ -34,13 +34,11 @@ if city_name:
         col3.metric("Wind Speed (km/h)", f"{weather_data['current']['wind_kph']}")
 
         st.write(f"**Condition**: {weather_data['current']['condition']['text']}")
-        
-        # Temperature Trend Plot with Enhanced Styling
+
+        # Temperature Trend Plot
         st.subheader("Temperature Trend for Today")
-        plt.style.use("ggplot")  # Updated style
+        plt.style.use("ggplot")
         fig, ax = plt.subplots(figsize=(10, 4))
-        
-        # Plot hourly temperature trend
         ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
         ax.set_ylabel("Temperature (°C)")
@@ -51,27 +49,12 @@ if city_name:
         # Humidity Trend Plot
         st.subheader("Humidity Trend for Today")
         fig, ax = plt.subplots(figsize=(10, 4))
-        
-        # Plot hourly humidity trend
         ax.plot(weather_data['hourly_humidity_trend'], marker='o', color='green', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
         ax.set_ylabel("Humidity (%)")
         ax.set_title("Simulated Hourly Humidity Trend", fontsize=14)
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
-
-        # Optional: Minor styling adjustments for visual consistency
-        st.markdown(
-            """
-            <style>
-            .css-18e3th9 {
-                background-color: #f5f5f5;
-                color: #333;
-                font-family: Arial, sans-serif;
-            }
-            </style>
-            """, unsafe_allow_html=True
-        )
 
     else:
         # Display error message if city is not found or there's an error
