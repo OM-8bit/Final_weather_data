@@ -1,34 +1,30 @@
 # data_of_weather.py
 
 import requests
-import random  # For creating sample trend data
+import random
 
 def fetch_weather_data(city):
-    API_KEY = "306a3c740319b380defc4ba64cd24b37"  # OpenWeather API key
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+    API_KEY = "306a3c740319b380defc4ba64cd24b37"
+    current_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+    forecast_url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
 
-    response = requests.get(url)
-    data = response.json()
+    # Get current weather data
+    current_response = requests.get(current_url)
+    current_data = current_response.json()
 
-    # Print the raw response for debugging
-    print(data)
+    # Get forecast data
+    forecast_response = requests.get(forecast_url)
+    forecast_data = forecast_response.json()
 
-    if response.status_code == 200 and 'cod' in data and data['cod'] == 200:
-        # Generate mock hourly temperature and humidity trends
-        hourly_trend = []
-        hourly_humidity_trend = []
-        base_temp = data['main']['temp']
-        base_humidity = data['main']['humidity']
-        
-        for hour in range(24):  # 24 hours for the current day
-            temp_variation = random.uniform(-2, 2)  # Simulate small temperature changes
-            humidity_variation = random.uniform(-5, 5)  # Simulate small humidity changes
-            
-            hourly_trend.append(base_temp + temp_variation)
-            hourly_humidity_trend.append(max(0, min(100, base_humidity + humidity_variation)))  # Keep within 0-100%
-        
-        data['hourly_trend'] = hourly_trend  # Add temperature trend
-        data['hourly_humidity_trend'] = hourly_humidity_trend  # Add humidity trend
-        return data  # Return the weather data if the request was successful
+    if current_response.status_code == 200 and forecast_response.status_code == 200:
+        # Generate mock hourly data for trends if required, or use forecast data
+        hourly_trend = [forecast['main']['temp'] for forecast in forecast_data['list'][:8]]
+        hourly_humidity_trend = [forecast['main']['humidity'] for forecast in forecast_data['list'][:8]]
+
+        current_data['hourly_trend'] = hourly_trend
+        current_data['hourly_humidity_trend'] = hourly_humidity_trend
+        current_data['forecast'] = forecast_data['list']  # Add full forecast data if needed
+
+        return current_data
     else:
-        return {"error": data.get("message", "An error occurred")}
+        return {"error": current_data.get("message", "An error occurred")}

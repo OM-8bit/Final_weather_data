@@ -4,30 +4,23 @@ import streamlit as st
 from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
 
-# Set up Streamlit app with a theme and wide layout and add animated favicon
 st.set_page_config(
     page_title="Weather Data Visualization",
     layout="wide",
     page_icon="Assets/cloudy.png"
 )
 
-# Title with Emoji
 st.title("🌤️ Weather Data Visualization")
 st.markdown("Enter a city name to get the current weather details!")
 
-# Input from the user
 city_name = st.text_input("Enter city name", "")
 
-# Fetch weather data and display it
 if city_name:
     weather_data = fetch_weather_data(city_name)
 
-    # Check if the data was fetched successfully or if there was an error
     if "error" not in weather_data:
-        # Display weather details in a visually appealing layout
         st.subheader(f"Weather in {city_name}")
 
-        # Create three columns for better layout
         col1, col2, col3 = st.columns(3)
         col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
         col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
@@ -45,7 +38,7 @@ if city_name:
         ax.set_title("Simulated Hourly Temperature Trend", fontsize=14)
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
-        
+
         # Humidity Trend Plot
         st.subheader("Humidity Trend for Today")
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -56,6 +49,19 @@ if city_name:
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
 
+        # Forecast Display
+        st.subheader("5-Day Forecast (Every 3 hours)")
+        forecast_days = []
+        for i in range(0, len(weather_data['forecast']), 8):  # Display data every 24 hours (8 * 3 = 24 hours)
+            forecast = weather_data['forecast'][i]
+            forecast_days.append({
+                "Date": forecast['dt_txt'],
+                "Temp": forecast['main']['temp'],
+                "Condition": forecast['weather'][0]['description'].capitalize()
+            })
+
+        for forecast in forecast_days:
+            st.write(f"**{forecast['Date']}**: {forecast['Temp']}°C, {forecast['Condition']}")
+
     else:
-        # Display error message if city is not found or there's an error
         st.error(weather_data["error"])
