@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.title("🌤️ Weather Data Visualization")
-st.markdown("Enter a city name to get the current weather details!")
+st.markdown("Enter the name of city/state/country to get the current weather details!")
 
 city_name = st.text_input("Enter city name", "")
 
