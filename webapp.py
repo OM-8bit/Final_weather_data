@@ -29,11 +29,11 @@ if city_name:
 
         # Create three columns for better layout
         col1, col2, col3 = st.columns(3)
-        col1.metric("Temperature (°C)", f"{weather_data['current']['temp_c']}°C")
-        col2.metric("Humidity", f"{weather_data['current']['humidity']}%")
-        col3.metric("Wind Speed (km/h)", f"{weather_data['current']['wind_kph']}")
+        col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
+        col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
+        col3.metric("Wind Speed (m/s)", f"{weather_data['wind']['speed']}")
 
-        st.write(f"**Condition**: {weather_data['current']['condition']['text']}")
+        st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
         # Temperature Trend Plot
         st.subheader("Temperature Trend for Today")
