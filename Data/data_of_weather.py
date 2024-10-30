@@ -1,7 +1,6 @@
 # data_of_weather.py
 
 import requests
-import random
 
 def fetch_weather_data(city):
     API_KEY = "306a3c740319b380defc4ba64cd24b37"
@@ -11,10 +10,12 @@ def fetch_weather_data(city):
     # Get current weather data
     current_response = requests.get(current_url)
     current_data = current_response.json()
+    print("Current Weather Data (Raw):", current_data)  # Debugging statement
 
     # Get forecast data
     forecast_response = requests.get(forecast_url)
     forecast_data = forecast_response.json()
+    print("Forecast Data (Raw):", forecast_data)  # Debugging statement
 
     if current_response.status_code == 200 and forecast_response.status_code == 200:
         # Generate mock hourly data for trends if required, or use forecast data
