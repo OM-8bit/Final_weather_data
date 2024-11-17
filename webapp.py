@@ -3,13 +3,16 @@
 import streamlit as st
 from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
+import pandas as pd
 
+# Streamlit Page Configuration
 st.set_page_config(
     page_title="Weather Data Visualization",
     layout="wide",
     page_icon="Assets/cloudy.png"
 )
 
+# Title and Input
 st.title("🌤️ Weather Data Visualization")
 st.markdown("Enter the name of city/state/country to get the current weather details!")
 
@@ -19,7 +22,8 @@ if city_name:
     weather_data = fetch_weather_data(city_name)
 
     if "error" not in weather_data:
-        st.subheader(f"Weather in {city_name}")
+        # **Current Weather Section**
+        st.subheader(f"Current Weather in {city_name}")
 
         col1, col2, col3 = st.columns(3)
         col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
@@ -28,8 +32,8 @@ if city_name:
 
         st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
-        # Temperature Trend Plot
-        st.subheader("Temperature Trend for Today")
+        # **Temperature Trend Plot for Current Day**
+        st.subheader("Simulated Temperature Trend for Today")
         plt.style.use("ggplot")
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
@@ -39,8 +43,8 @@ if city_name:
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
 
-        # Humidity Trend Plot
-        st.subheader("Humidity Trend for Today")
+        # **Humidity Trend Plot for Current Day**
+        st.subheader("Simulated Humidity Trend for Today")
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(weather_data['hourly_humidity_trend'], marker='o', color='green', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
@@ -49,19 +53,43 @@ if city_name:
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
 
-        # Forecast Display
-        st.subheader("5-Day Forecast (Every 3 hours)")
-        forecast_days = []
-        for i in range(0, len(weather_data['forecast']), 8):  # Display data every 24 hours (8 * 3 = 24 hours)
-            forecast = weather_data['forecast'][i]
-            forecast_days.append({
-                "Date": forecast['dt_txt'],
-                "Temp": forecast['main']['temp'],
-                "Condition": forecast['weather'][0]['description'].capitalize()
-            })
+        # **Forecast Section**
+        st.subheader("5-Day Weather Forecast")
 
-        for forecast in forecast_days:
-            st.write(f"**{forecast['Date']}**: {forecast['Temp']}°C, {forecast['Condition']}")
+        # Process forecast data into a DataFrame
+        def process_forecast_data(forecast):
+            return pd.DataFrame([
+                {
+                    "DateTime": item["dt_txt"],
+                    "Temperature": item["main"]["temp"],
+                    "Humidity": item["main"]["humidity"]
+                }
+                for item in forecast
+            ])
+
+        forecast_df = process_forecast_data(weather_data["forecast"])
+
+        # **Temperature Trend for Next 5 Days**
+        st.subheader("5-Day Temperature Trend (3-hour intervals)")
+        st.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
+
+        # **Daily Max & Min Temperatures**
+        st.subheader("Daily Max & Min Temperatures")
+        forecast_df["Date"] = pd.to_datetime(forecast_df["DateTime"]).dt.date
+        daily_stats = forecast_df.groupby("Date").agg({"Temperature": ["max", "min"]})
+        daily_stats.columns = ["Max Temp", "Min Temp"]
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        daily_stats.plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Temperature (°C)")
+        ax.set_title("Daily Max & Min Temperatures")
+        ax.grid(color="gray", linestyle="--", linewidth=0.5)
+        st.pyplot(fig)
+
+        # **Humidity Trend for Next 5 Days**
+        st.subheader("5-Day Humidity Trend (3-hour intervals)")
+        st.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
 
     else:
         st.error(weather_data["error"])
