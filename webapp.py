@@ -9,26 +9,45 @@ import pandas as pd
 st.set_page_config(
     page_title="Weather Data Visualization",
     layout="wide",
-    page_icon="Assets/cloudy.png"
+    page_icon="Assets/rain.png"
 )
 
-# Title and Input
-st.title("🌤️ Weather Data Visualization")
+# Function to apply custom CSS
+def apply_custom_css():
+    with open("Styling_files/css/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+apply_custom_css()
+
+# Title with Streamlit Markdown for Styling
+st.markdown("<h1 style='text-align: center;'>🌤️ Weather Data Visualization</h1>", unsafe_allow_html=True)
 st.markdown("Enter the name of city/state/country to get the current weather details!")
 
+# Dropdown for temperature and wind speed units
+temp_unit = st.selectbox("Select Temperature Unit", ["Celsius", "Fahrenheit"])
+wind_speed_unit = st.selectbox("Select Wind Speed Unit", ["m/s", "km/h"])
+
+# City Name Input
 city_name = st.text_input("Enter city name", "")
 
 if city_name:
+    st.info("Fetching weather data... Please wait!")
     weather_data = fetch_weather_data(city_name)
 
     if "error" not in weather_data:
         # **Current Weather Section**
         st.subheader(f"Current Weather in {city_name}")
 
+        # Convert temperature and wind speed based on selected unit
+        if temp_unit == "Fahrenheit":
+            weather_data['main']['temp'] = weather_data['main']['temp'] * 9/5 + 32
+        if wind_speed_unit == "km/h":
+            weather_data['wind']['speed'] *= 3.6
+
         col1, col2, col3 = st.columns(3)
-        col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
+        col1.metric(f"Temperature ({temp_unit})", f"{weather_data['main']['temp']:.1f}°")
         col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
-        col3.metric("Wind Speed (m/s)", f"{weather_data['wind']['speed']}")
+        col3.metric(f"Wind Speed ({wind_speed_unit})", f"{weather_data['wind']['speed']:.1f}")
 
         st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
@@ -38,7 +57,7 @@ if city_name:
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
-        ax.set_ylabel("Temperature (°C)")
+        ax.set_ylabel(f"Temperature ({temp_unit})")
         ax.set_title("Simulated Hourly Temperature Trend", fontsize=14)
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
@@ -82,7 +101,7 @@ if city_name:
         fig, ax = plt.subplots(figsize=(10, 6))
         daily_stats.plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
         ax.set_xlabel("Date")
-        ax.set_ylabel("Temperature (°C)")
+        ax.set_ylabel(f"Temperature ({temp_unit})")
         ax.set_title("Daily Max & Min Temperatures")
         ax.grid(color="gray", linestyle="--", linewidth=0.5)
         st.pyplot(fig)
