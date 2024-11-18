@@ -1,5 +1,3 @@
-# webapp.py
-
 import streamlit as st
 from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
@@ -12,52 +10,64 @@ st.set_page_config(
     page_icon="Assets/rain.png"
 )
 
-# Function to apply custom CSS
-def apply_custom_css():
-    with open("Styling_files/css/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# **Light/Dark Mode Toggle**
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False  # Default mode: Light
 
-apply_custom_css()
+# Toggle Button
+toggle_label = "🌙 Dark Mode" if not st.session_state.dark_mode else "☀️ Light Mode"
+if st.button(toggle_label):
+    st.session_state.dark_mode = not st.session_state.dark_mode
 
-# Title with Streamlit Markdown for Styling
-st.markdown("<h1 style='text-align: center;'>🌤️ Weather Data Visualization</h1>", unsafe_allow_html=True)
+# Apply Dark/Light Mode CSS
+if st.session_state.dark_mode:
+    st.markdown(
+        """
+        <style>
+            body { background-color: #1E1E1E; color: #FAFAFA; }
+            .stButton > button { background-color: #444; color: white; }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.markdown(
+        """
+        <style>
+            body { background-color: #FFFFFF; color: #000000; }
+            .stButton > button { background-color: #E0E0E0; color: black; }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Title and Input
+st.title("🌤️ Weather Data Visualization")
 st.markdown("Enter the name of city/state/country to get the current weather details!")
 
-# Dropdown for temperature and wind speed units
-temp_unit = st.selectbox("Select Temperature Unit", ["Celsius", "Fahrenheit"])
-wind_speed_unit = st.selectbox("Select Wind Speed Unit", ["m/s", "km/h"])
-
-# City Name Input
 city_name = st.text_input("Enter city name", "")
 
 if city_name:
-    st.info("Fetching weather data... Please wait!")
     weather_data = fetch_weather_data(city_name)
 
     if "error" not in weather_data:
         # **Current Weather Section**
         st.subheader(f"Current Weather in {city_name}")
 
-        # Convert temperature and wind speed based on selected unit
-        if temp_unit == "Fahrenheit":
-            weather_data['main']['temp'] = weather_data['main']['temp'] * 9/5 + 32
-        if wind_speed_unit == "km/h":
-            weather_data['wind']['speed'] *= 3.6
-
         col1, col2, col3 = st.columns(3)
-        col1.metric(f"Temperature ({temp_unit})", f"{weather_data['main']['temp']:.1f}°")
+        col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
         col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
-        col3.metric(f"Wind Speed ({wind_speed_unit})", f"{weather_data['wind']['speed']:.1f}")
+        col3.metric("Wind Speed (m/s)", f"{weather_data['wind']['speed']}")
 
         st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
         # **Temperature Trend Plot for Current Day**
         st.subheader("Simulated Temperature Trend for Today")
-        plt.style.use("ggplot")
+        plt.style.use("ggplot" if not st.session_state.dark_mode else "dark_background")
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
         ax.set_xlabel("Hour")
-        ax.set_ylabel(f"Temperature ({temp_unit})")
+        ax.set_ylabel("Temperature (°C)")
         ax.set_title("Simulated Hourly Temperature Trend", fontsize=14)
         ax.grid(color='gray', linestyle='--', linewidth=0.5)
         st.pyplot(fig)
@@ -101,7 +111,7 @@ if city_name:
         fig, ax = plt.subplots(figsize=(10, 6))
         daily_stats.plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
         ax.set_xlabel("Date")
-        ax.set_ylabel(f"Temperature ({temp_unit})")
+        ax.set_ylabel("Temperature (°C)")
         ax.set_title("Daily Max & Min Temperatures")
         ax.grid(color="gray", linestyle="--", linewidth=0.5)
         st.pyplot(fig)
