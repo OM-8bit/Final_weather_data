@@ -37,7 +37,6 @@ city_name = st.text_input("Enter city name", "")
 st.markdown("OR")
 if st.button("📍 Use My Location"):
     try:
-        # Use Streamlit's location permissions and Geopy for reverse geocoding
         g = geocoder.ip('me')  # Get the user's approximate location via IP
         if g.latlng:
             latitude, longitude = g.latlng
@@ -50,6 +49,27 @@ if st.button("📍 Use My Location"):
 else:
     weather_data = fetch_weather_data(city_name) if city_name else None
 
+# **Generate Forecast Data**
+def generate_forecast_data(weather_data):
+    if "forecast" in weather_data:
+        forecast = weather_data["forecast"]
+        # Adjusted keys based on API response
+        forecast_data = {
+            "DateTime": [entry.get("dt_txt", "N/A") for entry in forecast],
+            "Temperature": [entry.get("main", {}).get("temp", 0) for entry in forecast],
+            "Humidity": [entry.get("main", {}).get("humidity", 0) for entry in forecast],
+        }
+        return pd.DataFrame(forecast_data)
+    else:
+        # Simulated data if forecast is unavailable
+        st.warning("Forecast data unavailable. Using simulated data.")
+        simulated_data = {
+            "DateTime": pd.date_range(start=pd.Timestamp.now(), periods=10, freq="6H"),
+            "Temperature": [30 + i % 5 for i in range(10)],
+            "Humidity": [60 + i % 10 for i in range(10)],
+        }
+        return pd.DataFrame(simulated_data)
+
 if weather_data and "error" not in weather_data:
     # **Current Weather Section**
     st.subheader(f"Current Weather in {city_name or 'your location'}")
@@ -61,46 +81,38 @@ if weather_data and "error" not in weather_data:
 
     st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
-    # **Temperature Trend Plot for Current Day**
-    st.subheader("Simulated Temperature Trend for Today")
-    plt.style.use("ggplot" if not st.session_state.dark_mode else "dark_background")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(weather_data['hourly_trend'], marker='o', color='dodgerblue', linestyle='-', linewidth=2, markersize=5)
-    ax.set_xlabel("Hour")
-    ax.set_ylabel("Temperature (°C)")
-    ax.set_title("Simulated Hourly Temperature Trend", fontsize=14)
-    ax.grid(color='gray', linestyle='--', linewidth=0.5)
-    st.pyplot(fig)
-
-    # **Humidity Trend Plot for Current Day**
-    st.subheader("Simulated Humidity Trend for Today")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(weather_data['hourly_humidity_trend'], marker='o', color='green', linestyle='-', linewidth=2, markersize=5)
-    ax.set_xlabel("Hour")
-    ax.set_ylabel("Humidity (%)")
-    ax.set_title("Simulated Hourly Humidity Trend", fontsize=14)
-    ax.grid(color='gray', linestyle='--', linewidth=0.5)
-    st.pyplot(fig)
-
     # **Forecast Section**
+    forecast_df = generate_forecast_data(weather_data)
+
+    # **Today's Weather Trend**
+    st.subheader("Today's Weather Trend")
+    today_data = forecast_df[
+        pd.to_datetime(forecast_df["DateTime"]).dt.date == pd.Timestamp.now().date()
+    ]
+
+    if not today_data.empty:
+        col1, col2 = st.columns(2)
+        # Temperature trend for today
+        col1.subheader("Temperature Trend")
+        col1.line_chart(data=today_data, x="DateTime", y="Temperature", use_container_width=True)
+
+        # Humidity trend for today
+        col2.subheader("Humidity Trend")
+        col2.line_chart(data=today_data, x="DateTime", y="Humidity", use_container_width=True)
+    else:
+        st.warning("No data available for today's trend.")
+
+    # **5-Day Weather Forecast**
     st.subheader("5-Day Weather Forecast")
-
-    # Process forecast data into a DataFrame
-    def process_forecast_data(forecast):
-        return pd.DataFrame([
-            {
-                "DateTime": item["dt_txt"],
-                "Temperature": item["main"]["temp"],
-                "Humidity": item["main"]["humidity"]
-            }
-            for item in forecast
-        ])
-
-    forecast_df = process_forecast_data(weather_data["forecast"])
+    col1, col2 = st.columns(2)
 
     # **Temperature Trend for Next 5 Days**
-    st.subheader("5-Day Temperature Trend (3-hour intervals)")
-    st.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
+    col1.subheader("Temperature Trend")
+    col1.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
+
+    # **Humidity Trend for Next 5 Days**
+    col2.subheader("Humidity Trend")
+    col2.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
 
     # **Daily Max & Min Temperatures**
     st.subheader("Daily Max & Min Temperatures")
@@ -115,10 +127,6 @@ if weather_data and "error" not in weather_data:
     ax.set_title("Daily Max & Min Temperatures")
     ax.grid(color="gray", linestyle="--", linewidth=0.5)
     st.pyplot(fig)
-
-    # **Humidity Trend for Next 5 Days**
-    st.subheader("5-Day Humidity Trend (3-hour intervals)")
-    st.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
 
 elif weather_data and "error" in weather_data:
     st.error(weather_data["error"])
