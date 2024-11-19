@@ -2,6 +2,7 @@ import streamlit as st
 from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
 import pandas as pd
+import geocoder
 from geopy.geocoders import Nominatim  # To reverse geocode coordinates into city names
 
 # Streamlit Page Configuration
@@ -37,7 +38,6 @@ st.markdown("OR")
 if st.button("📍 Use My Location"):
     try:
         # Use Streamlit's location permissions and Geopy for reverse geocoding
-        import geocoder
         g = geocoder.ip('me')  # Get the user's approximate location via IP
         if g.latlng:
             latitude, longitude = g.latlng
