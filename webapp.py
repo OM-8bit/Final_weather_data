@@ -19,27 +19,10 @@ toggle_label = "🌙 Dark Mode" if not st.session_state.dark_mode else "☀️ L
 if st.button(toggle_label):
     st.session_state.dark_mode = not st.session_state.dark_mode
 
-# Apply Dark/Light Mode CSS
-if st.session_state.dark_mode:
-    st.markdown(
-        """
-        <style>
-            body { background-color: #1E1E1E; color: #FAFAFA; }
-            .stButton > button { background-color: #444; color: white; }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-else:
-    st.markdown(
-        """
-        <style>
-            body { background-color: #FFFFFF; color: #000000; }
-            .stButton > button { background-color: #E0E0E0; color: black; }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# Apply CSS Based on Mode
+css_file = "dark_mode.css" if st.session_state.dark_mode else "light_mode.css"
+with open(f"Styling_files/{css_file}") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Title and Input
 st.title("🌤️ Weather Data Visualization")
