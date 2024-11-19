@@ -26,6 +26,10 @@ css_file = "dark_mode.css" if st.session_state.dark_mode else "light_mode.css"
 with open(f"Styling_files/{css_file}") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+# Apply Matplotlib Style Based on Mode
+mpl_style = "dark_background" if st.session_state.dark_mode else "default"
+plt.style.use(mpl_style)
+
 # Title and Input
 st.title("🌤️ Weather Data Visualization")
 st.markdown("Enter the name of city/state/country or allow location access to get weather details!")
@@ -53,7 +57,6 @@ else:
 def generate_forecast_data(weather_data):
     if "forecast" in weather_data:
         forecast = weather_data["forecast"]
-        # Adjusted keys based on API response
         forecast_data = {
             "DateTime": [entry.get("dt_txt", "N/A") for entry in forecast],
             "Temperature": [entry.get("main", {}).get("temp", 0) for entry in forecast],
@@ -61,7 +64,6 @@ def generate_forecast_data(weather_data):
         }
         return pd.DataFrame(forecast_data)
     else:
-        # Simulated data if forecast is unavailable
         st.warning("Forecast data unavailable. Using simulated data.")
         simulated_data = {
             "DateTime": pd.date_range(start=pd.Timestamp.now(), periods=10, freq="6H"),
@@ -91,14 +93,37 @@ if weather_data and "error" not in weather_data:
     ]
 
     if not today_data.empty:
-        col1, col2 = st.columns(2)
-        # Temperature trend for today
-        col1.subheader("Temperature Trend")
-        col1.line_chart(data=today_data, x="DateTime", y="Temperature", use_container_width=True)
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-        # Humidity trend for today
-        col2.subheader("Humidity Trend")
-        col2.line_chart(data=today_data, x="DateTime", y="Humidity", use_container_width=True)
+        # Temperature trend
+        axes[0].plot(
+            pd.to_datetime(today_data["DateTime"]),
+            today_data["Temperature"],
+            label="Temperature (°C)",
+            marker="o",
+            color="red",
+        )
+        axes[0].set_title("Temperature Trend")
+        axes[0].set_xlabel("Time")
+        axes[0].set_ylabel("Temperature (°C)")
+        axes[0].grid(color="gray", linestyle="--", linewidth=0.5)
+        axes[0].legend()
+
+        # Humidity trend
+        axes[1].plot(
+            pd.to_datetime(today_data["DateTime"]),
+            today_data["Humidity"],
+            label="Humidity (%)",
+            marker="o",
+            color="blue",
+        )
+        axes[1].set_title("Humidity Trend")
+        axes[1].set_xlabel("Time")
+        axes[1].set_ylabel("Humidity (%)")
+        axes[1].grid(color="gray", linestyle="--", linewidth=0.5)
+        axes[1].legend()
+
+        st.pyplot(fig)
     else:
         st.warning("No data available for today's trend.")
 
