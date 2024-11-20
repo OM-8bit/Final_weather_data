@@ -37,6 +37,9 @@ st.markdown("Enter the name of city/state/country or allow location access to ge
 # **City Name Input**
 city_name = st.text_input("Enter city name", "")
 
+# Initialize weather_data to None
+weather_data = None
+
 # **Location-Based Input**
 st.markdown("OR")
 if st.button("📍 Use My Location"):
@@ -54,7 +57,8 @@ if st.button("📍 Use My Location"):
     except Exception as e:
         st.error(f"Location access failed: {e}")
 else:
-    weather_data = fetch_weather_data(city_name) if city_name else None
+    if city_name:
+        weather_data = fetch_weather_data(city_name)
 
 # **Generate Forecast Data**
 def generate_forecast_data(weather_data):
@@ -80,87 +84,90 @@ def generate_daily_summary(forecast_df):
     )
     return daily_summary
 
-if weather_data and "error" not in weather_data:
-    # **Current Weather Section**
-    st.subheader(f"Current Weather in {city_name or 'your location'}")
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
-    col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
-    col3.metric("Wind Speed (m/s)", f"{weather_data['wind']['speed']}")
-
-    st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
-
-    # **Forecast Section**
-    forecast_df = generate_forecast_data(weather_data)
-
-    # **Today's Weather Trend**
-    st.subheader("Today's Weather Trend")
-    today_data = forecast_df[
-        pd.to_datetime(forecast_df["DateTime"]).dt.date == pd.Timestamp.now().date()
-    ]
-
-    if not today_data.empty:
-        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-
-        # Temperature trend
-        axes[0].plot(
-            pd.to_datetime(today_data["DateTime"]),
-            today_data["Temperature"],
-            label="Temperature (°C)",
-            marker="o",
-            color="red",
-        )
-        axes[0].set_title("Temperature Trend")
-        axes[0].set_xlabel("Time")
-        axes[0].set_ylabel("Temperature (°C)")
-        axes[0].grid(color="gray", linestyle="--", linewidth=0.5)
-        axes[0].legend()
-
-        # Humidity trend
-        axes[1].plot(
-            pd.to_datetime(today_data["DateTime"]),
-            today_data["Humidity"],
-            label="Humidity (%)",
-            marker="o",
-            color="blue",
-        )
-        axes[1].set_title("Humidity Trend")
-        axes[1].set_xlabel("Time")
-        axes[1].set_ylabel("Humidity (%)")
-        axes[1].grid(color="gray", linestyle="--", linewidth=0.5)
-        axes[1].legend()
-
-        st.pyplot(fig)
+if weather_data:
+    if "error" in weather_data:
+        st.error(weather_data["error"])
     else:
-        st.warning("No data available for today's trend.")
+        # **Current Weather Section**
+        st.subheader(f"Current Weather in {city_name or 'your location'}")
 
-    # **5-Day Weather Forecast**
-    st.subheader("5-Day Weather Forecast")
-    col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
+        col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
+        col3.metric("Wind Speed (m/s)", f"{weather_data['wind']['speed']}")
 
-    # **Temperature Trend for Next 5 Days**
-    col1.subheader("Temperature Trend")
-    col1.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
+        st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
-    # **Humidity Trend for Next 5 Days**
-    col2.subheader("Humidity Trend")
-    col2.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
+        # **Forecast Section**
+        forecast_df = generate_forecast_data(weather_data)
 
-    # **Daily Summary**
-    st.subheader("Multi-Day Weather Summary")
-    daily_summary = generate_daily_summary(forecast_df)
-    st.dataframe(daily_summary)
+        # **Today's Weather Trend**
+        st.subheader("Today's Weather Trend")
+        today_data = forecast_df[
+            pd.to_datetime(forecast_df["DateTime"]).dt.date == pd.Timestamp.now().date()
+        ]
 
-    # **Daily Max & Min Temperatures Visualization**
-    st.subheader("Daily Max & Min Temperatures")
-    fig, ax = plt.subplots(figsize=(10, 6))
-    daily_summary[["Max_Temperature", "Min_Temperature"]].plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Temperature (°C)")
-    ax.set_title("Daily Max & Min Temperatures")
-    ax.grid(color="gray", linestyle="--", linewidth=0.5)
-    st.pyplot(fig)
+        if not today_data.empty:
+            fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-elif weather_data and "error" in weather_data:
-    st.error(weather_data["error"])
+            # Temperature trend
+            axes[0].plot(
+                pd.to_datetime(today_data["DateTime"]),
+                today_data["Temperature"],
+                label="Temperature (°C)",
+                marker="o",
+                color="red",
+            )
+            axes[0].set_title("Temperature Trend")
+            axes[0].set_xlabel("Time")
+            axes[0].set_ylabel("Temperature (°C)")
+            axes[0].grid(color="gray", linestyle="--", linewidth=0.5)
+            axes[0].legend()
+
+            # Humidity trend
+            axes[1].plot(
+                pd.to_datetime(today_data["DateTime"]),
+                today_data["Humidity"],
+                label="Humidity (%)",
+                marker="o",
+                color="blue",
+            )
+            axes[1].set_title("Humidity Trend")
+            axes[1].set_xlabel("Time")
+            axes[1].set_ylabel("Humidity (%)")
+            axes[1].grid(color="gray", linestyle="--", linewidth=0.5)
+            axes[1].legend()
+
+            st.pyplot(fig)
+        else:
+            st.warning("No data available for today's trend.")
+
+        # **5-Day Weather Forecast**
+        st.subheader("5-Day Weather Forecast")
+        col1, col2 = st.columns(2)
+
+        # **Temperature Trend for Next 5 Days**
+        col1.subheader("Temperature Trend")
+        col1.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
+
+        # **Humidity Trend for Next 5 Days**
+        col2.subheader("Humidity Trend")
+        col2.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
+
+        # **Daily Summary**
+        st.subheader("Multi-Day Weather Summary")
+        daily_summary = generate_daily_summary(forecast_df)
+        st.dataframe(daily_summary)
+
+        # **Daily Max & Min Temperatures Visualization**
+        st.subheader("Daily Max & Min Temperatures")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        daily_summary[["Max_Temperature", "Min_Temperature"]].plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Temperature (°C)")
+        ax.set_title("Daily Max & Min Temperatures")
+        ax.grid(color="gray", linestyle="--", linewidth=0.5)
+        st.pyplot(fig)
+
+else:
+    st.warning("No weather data available. Please provide a valid city name or try using location services.")
