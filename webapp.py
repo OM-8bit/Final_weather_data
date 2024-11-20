@@ -3,7 +3,7 @@ from Data.data_of_weather import fetch_weather_data
 import matplotlib.pyplot as plt
 import pandas as pd
 import geocoder
-from geopy.geocoders import Nominatim  # To reverse geocode coordinates into city names
+from geopy.geocoders import Nominatim
 
 # Streamlit Page Configuration
 st.set_page_config(
@@ -41,10 +41,13 @@ city_name = st.text_input("Enter city name", "")
 st.markdown("OR")
 if st.button("📍 Use My Location"):
     try:
-        g = geocoder.ip('me')  # Get the user's approximate location via IP
+        g = geocoder.ip('me')  # Approximate location via IP
         if g.latlng:
             latitude, longitude = g.latlng
-            st.success(f"Location Detected: Latitude {latitude}, Longitude {longitude}")
+            geolocator = Nominatim(user_agent="geoapiExercises")
+            location = geolocator.reverse((latitude, longitude), language="en")
+            detected_city = location.raw.get("address", {}).get("city", "Unknown Location")
+            st.success(f"Detected Location: {detected_city} (Lat: {latitude}, Lon: {longitude})")
             weather_data = fetch_weather_data(lat=latitude, lon=longitude)
         else:
             st.error("Unable to detect location. Please enter a city name instead.")
@@ -64,13 +67,18 @@ def generate_forecast_data(weather_data):
         }
         return pd.DataFrame(forecast_data)
     else:
-        st.warning("Forecast data unavailable. Using simulated data.")
-        simulated_data = {
-            "DateTime": pd.date_range(start=pd.Timestamp.now(), periods=10, freq="6H"),
-            "Temperature": [30 + i % 5 for i in range(10)],
-            "Humidity": [60 + i % 10 for i in range(10)],
-        }
-        return pd.DataFrame(simulated_data)
+        st.warning("Forecast data unavailable.")
+        return pd.DataFrame()
+
+# **Multi-Day Summary**
+def generate_daily_summary(forecast_df):
+    forecast_df["Date"] = pd.to_datetime(forecast_df["DateTime"]).dt.date
+    daily_summary = forecast_df.groupby("Date").agg(
+        Max_Temperature=("Temperature", "max"),
+        Min_Temperature=("Temperature", "min"),
+        Avg_Humidity=("Humidity", "mean")
+    )
+    return daily_summary
 
 if weather_data and "error" not in weather_data:
     # **Current Weather Section**
@@ -139,14 +147,15 @@ if weather_data and "error" not in weather_data:
     col2.subheader("Humidity Trend")
     col2.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
 
-    # **Daily Max & Min Temperatures**
-    st.subheader("Daily Max & Min Temperatures")
-    forecast_df["Date"] = pd.to_datetime(forecast_df["DateTime"]).dt.date
-    daily_stats = forecast_df.groupby("Date").agg({"Temperature": ["max", "min"]})
-    daily_stats.columns = ["Max Temp", "Min Temp"]
+    # **Daily Summary**
+    st.subheader("Multi-Day Weather Summary")
+    daily_summary = generate_daily_summary(forecast_df)
+    st.dataframe(daily_summary)
 
+    # **Daily Max & Min Temperatures Visualization**
+    st.subheader("Daily Max & Min Temperatures")
     fig, ax = plt.subplots(figsize=(10, 6))
-    daily_stats.plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
+    daily_summary[["Max_Temperature", "Min_Temperature"]].plot(kind="bar", ax=ax, color=["red", "blue"], alpha=0.8)
     ax.set_xlabel("Date")
     ax.set_ylabel("Temperature (°C)")
     ax.set_title("Daily Max & Min Temperatures")
