@@ -3,3 +3,12 @@
 
 # Ignore the temp directory
 temp/
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build artifacts
+build/
+dist/
+
+# Ignore log files
+*.log
