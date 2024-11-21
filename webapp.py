@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="Assets/rain.png"
 )
 
-# **Light/Dark Mode Toggle**
+# Light/Dark Mode Toggle
 if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = False  # Default mode: Light
 
@@ -34,10 +34,13 @@ plt.style.use(mpl_style)
 st.title("🌤️ Weather Data Visualization")
 st.markdown("Enter the name of city/state/country or allow location access to get weather details!")
 
-# **City Name Input**
+# City Name Input
 city_name = st.text_input("Enter city name", "")
 
-# **Location-Based Input**
+# Initialize weather_data
+weather_data = None
+
+# Location-Based Input
 st.markdown("OR")
 if st.button("📍 Use My Location"):
     try:
@@ -63,7 +66,7 @@ if st.button("📍 Use My Location"):
 else:
     weather_data = fetch_weather_data(city_name) if city_name else None
 
-# **Generate Forecast Data**
+# Generate Forecast Data
 def generate_forecast_data(weather_data):
     if "forecast" in weather_data:
         forecast = weather_data["forecast"]
@@ -79,20 +82,20 @@ def generate_forecast_data(weather_data):
         return pd.DataFrame()
 
 if weather_data and "error" not in weather_data:
-    # **Current Weather Section**
+    # Current Weather Section
     st.subheader(f"Current Weather in {city_name or current_location}")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
     col2.metric("Humidity", f"{weather_data['main']['humidity']}%")
-    col3.metric("Wind Speed (m/s)", f"{weather_data.get('wind', {}).get('speed', 'N/A')}")
+    col3.metric("Wind Speed (km/h)", f"{weather_data['wind']['speed']} km/h")
 
     st.write(f"**Condition**: {weather_data['weather'][0]['description'].capitalize()}")
 
-    # **Forecast Section**
+    # Forecast Section
     forecast_df = generate_forecast_data(weather_data)
 
-    # **Today's Weather Trend**
+    # Today's Weather Trend
     st.subheader("Today's Weather Trend")
     today_data = forecast_df[
         pd.to_datetime(forecast_df["DateTime"]).dt.date == pd.Timestamp.now().date()
@@ -133,19 +136,19 @@ if weather_data and "error" not in weather_data:
     else:
         st.warning("No data available for today's trend.")
 
-    # **5-Day Weather Forecast**
+    # 5-Day Weather Forecast
     st.subheader("5-Day Weather Forecast")
     col1, col2 = st.columns(2)
 
-    # **Temperature Trend for Next 5 Days**
+    # Temperature Trend for Next 5 Days
     col1.subheader("Temperature Trend")
     col1.line_chart(data=forecast_df, x="DateTime", y="Temperature", use_container_width=True)
 
-    # **Humidity Trend for Next 5 Days**
+    # Humidity Trend for Next 5 Days
     col2.subheader("Humidity Trend")
     col2.line_chart(data=forecast_df, x="DateTime", y="Humidity", use_container_width=True)
 
-    # **Daily Max & Min Temperatures**
+    # Daily Max & Min Temperatures
     st.subheader("Daily Max & Min Temperatures")
     daily_stats = forecast_df.groupby("DateTime").agg(
         Max_Temperature=("Temperature", "max"),
@@ -159,7 +162,7 @@ if weather_data and "error" not in weather_data:
     ax.grid(color="gray", linestyle="--", linewidth=0.5)
     st.pyplot(fig)
 
-    # **Multi-Day Weather Summary**
+    # Multi-Day Weather Summary
     st.subheader("Multi-Day Weather Summary")
     forecast_df["Date"] = pd.to_datetime(forecast_df["DateTime"]).dt.date
     daily_summary = forecast_df.groupby("Date").agg(

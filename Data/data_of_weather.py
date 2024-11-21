@@ -52,10 +52,14 @@ def fetch_weather_data(city=None, lat=None, lon=None):
 
         forecast_data = forecast_response.json() if forecast_response.status_code == 200 else None
 
+        # Convert wind speed from m/s to km/h and round to 2 decimal places
+        wind_speed_kmh = round(weather_data["wind"]["speed"] * 3.6, 2)
+
         # Prepare the final data dictionary
         data = {
             "main": weather_data["main"],
             "weather": weather_data["weather"],
+            "wind": {"speed": wind_speed_kmh},
             "forecast": forecast_data["list"] if forecast_data else None,
         }
         print("Final Data Prepared:", data)  # Debugging print
