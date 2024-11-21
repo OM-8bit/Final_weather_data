@@ -5,7 +5,7 @@ API_KEY = "843e9c13211ccb7d50123f309ef15457"
 
 def fetch_weather_data(city=None, lat=None, lon=None):
     """
-    Fetches weather and AQI data based on the city name or latitude and longitude.
+    Fetches weather and forecast data based on the city name or latitude and longitude.
 
     Args:
         city (str): Name of the city.
@@ -13,13 +13,12 @@ def fetch_weather_data(city=None, lat=None, lon=None):
         lon (float): Longitude (optional).
 
     Returns:
-        dict: Dictionary containing weather and AQI data.
+        dict: Dictionary containing weather and forecast data.
     """
     try:
         # Base URLs
         weather_url = "https://api.openweathermap.org/data/2.5/weather"
         forecast_url = "https://api.openweathermap.org/data/2.5/forecast"
-        aqi_url = "http://api.openweathermap.org/data/2.5/air_pollution"
 
         params = {"appid": API_KEY, "units": "metric"}
         
@@ -33,7 +32,10 @@ def fetch_weather_data(city=None, lat=None, lon=None):
             return {"error": "Please provide a city name or latitude and longitude."}
 
         # Fetch current weather data
+        print("Fetching weather data...")
         weather_response = requests.get(weather_url, params=params)
+        print("Weather API Response:", weather_response.json())  # Debugging print
+
         if weather_response.status_code != 200:
             return {"error": f"Error fetching weather data: {weather_response.json().get('message')}"}
         weather_data = weather_response.json()
@@ -43,23 +45,22 @@ def fetch_weather_data(city=None, lat=None, lon=None):
         longitude = weather_data["coord"]["lon"]
 
         # Fetch forecast data
+        print("Fetching forecast data...")
         forecast_params = params.copy()
         forecast_response = requests.get(forecast_url, params=forecast_params)
-        forecast_data = forecast_response.json() if forecast_response.status_code == 200 else None
+        print("Forecast API Response:", forecast_response.json())  # Debugging print
 
-        # Fetch AQI data
-        aqi_params = {"lat": latitude, "lon": longitude, "appid": API_KEY}
-        aqi_response = requests.get(aqi_url, params=aqi_params)
-        aqi_data = aqi_response.json() if aqi_response.status_code == 200 else None
+        forecast_data = forecast_response.json() if forecast_response.status_code == 200 else None
 
         # Prepare the final data dictionary
         data = {
             "main": weather_data["main"],
             "weather": weather_data["weather"],
             "forecast": forecast_data["list"] if forecast_data else None,
-            "aqi": aqi_data["list"][0] if aqi_data and "list" in aqi_data and aqi_data["list"] else None,
         }
+        print("Final Data Prepared:", data)  # Debugging print
         return data
 
     except Exception as e:
+        print("An unexpected error occurred:", str(e))  # Debugging print
         return {"error": f"An unexpected error occurred: {str(e)}"}

@@ -44,7 +44,17 @@ if st.button("📍 Use My Location"):
         g = geocoder.ip('me')  # Get the user's approximate location via IP
         if g.latlng:
             latitude, longitude = g.latlng
-            st.success(f"Location Detected: Latitude {latitude}, Longitude {longitude}")
+
+            # Reverse Geocoding to Get Location Name
+            geolocator = Nominatim(user_agent="geoapiExercises")
+            location = geolocator.reverse((latitude, longitude), exactly_one=True)
+            current_location = location.address if location else "Unknown Location"
+            
+            # Display location details
+            st.success(f"Location Detected: {current_location}")
+            st.write(f"**Latitude**: {latitude}, **Longitude**: {longitude}")
+            
+            # Fetch Weather Data
             weather_data = fetch_weather_data(lat=latitude, lon=longitude)
         else:
             st.error("Unable to detect location. Please enter a city name instead.")
@@ -70,7 +80,7 @@ def generate_forecast_data(weather_data):
 
 if weather_data and "error" not in weather_data:
     # **Current Weather Section**
-    st.subheader(f"Current Weather in {city_name or 'your location'}")
+    st.subheader(f"Current Weather in {city_name or current_location}")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Temperature (°C)", f"{weather_data['main']['temp']}°C")
