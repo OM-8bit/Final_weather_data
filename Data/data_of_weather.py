@@ -1,31 +1,65 @@
 import requests
 
+# OpenWeatherMap API Key
+API_KEY = "843e9c13211ccb7d50123f309ef15457"
+
 def fetch_weather_data(city=None, lat=None, lon=None):
     """
-    Fetch weather data for a given city or coordinates (latitude and longitude).
+    Fetches weather and AQI data based on the city name or latitude and longitude.
+
+    Args:
+        city (str): Name of the city.
+        lat (float): Latitude (optional).
+        lon (float): Longitude (optional).
+
+    Returns:
+        dict: Dictionary containing weather and AQI data.
     """
-    API_KEY = "306a3c740319b380defc4ba64cd24b37"
-
-    if lat is not None and lon is not None:
-        current_url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
-        forecast_url = f"http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
-    elif city:
-        current_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
-        forecast_url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
-    else:
-        return {"error": "Please provide either a city name or latitude and longitude."}
-
     try:
-        current_response = requests.get(current_url)
-        forecast_response = requests.get(forecast_url)
+        # Base URLs
+        weather_url = "https://api.openweathermap.org/data/2.5/weather"
+        forecast_url = "https://api.openweathermap.org/data/2.5/forecast"
+        aqi_url = "http://api.openweathermap.org/data/2.5/air_pollution"
 
-        current_data = current_response.json()
-        forecast_data = forecast_response.json()
-
-        if current_response.status_code == 200 and forecast_response.status_code == 200:
-            current_data["forecast"] = forecast_data.get("list", [])
-            return current_data
+        params = {"appid": API_KEY, "units": "metric"}
+        
+        # Determine query parameters
+        if city:
+            params["q"] = city
+        elif lat and lon:
+            params["lat"] = lat
+            params["lon"] = lon
         else:
-            return {"error": current_data.get("message", "An error occurred.")}
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+            return {"error": "Please provide a city name or latitude and longitude."}
+
+        # Fetch current weather data
+        weather_response = requests.get(weather_url, params=params)
+        if weather_response.status_code != 200:
+            return {"error": f"Error fetching weather data: {weather_response.json().get('message')}"}
+        weather_data = weather_response.json()
+
+        # Extract latitude and longitude from weather data
+        latitude = weather_data["coord"]["lat"]
+        longitude = weather_data["coord"]["lon"]
+
+        # Fetch forecast data
+        forecast_params = params.copy()
+        forecast_response = requests.get(forecast_url, params=forecast_params)
+        forecast_data = forecast_response.json() if forecast_response.status_code == 200 else None
+
+        # Fetch AQI data
+        aqi_params = {"lat": latitude, "lon": longitude, "appid": API_KEY}
+        aqi_response = requests.get(aqi_url, params=aqi_params)
+        aqi_data = aqi_response.json() if aqi_response.status_code == 200 else None
+
+        # Prepare the final data dictionary
+        data = {
+            "main": weather_data["main"],
+            "weather": weather_data["weather"],
+            "forecast": forecast_data["list"] if forecast_data else None,
+            "aqi": aqi_data["list"][0] if aqi_data and "list" in aqi_data and aqi_data["list"] else None,
+        }
+        return data
+
+    except Exception as e:
+        return {"error": f"An unexpected error occurred: {str(e)}"}
